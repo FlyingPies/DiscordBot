@@ -1,2 +1,0 @@
-For Discord Bot
-# DiscordBotCSharp
