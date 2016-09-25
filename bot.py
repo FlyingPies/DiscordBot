@@ -86,7 +86,7 @@ async def on_message(message):
             await client.send_message(message.channel,'No song is currently playing.')
         elif player.is_playing():
             player.stop()
-            global queue
+            queue
             del queue[0]
             global paused
             paused = False
@@ -98,7 +98,6 @@ async def on_message(message):
             await client.send_message(message.channel,'No song is currently playing.')
         elif player.is_playing():
             player.pause()
-            global paused
             paused = True
         else:
             await client.send_message(message.channel,'No song is currently playing.')
@@ -107,7 +106,6 @@ async def on_message(message):
             await client.send_message(message.channel,'No song is currently playing.')
         elif paused==True:
             player.resume()
-            global paused
             paused = False
         else:
             await client.send_message(message.channel,'No song is currently playing.')
@@ -115,7 +113,6 @@ async def on_message(message):
         if not queue:
             await client.send_message(message.channel, 'No song is currently playing.')
         else:
-            global player
             await client.send_message(message.channel, '`'+player.title+'` is currently playing')
 async def Play():
     global player
