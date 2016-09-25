@@ -6,17 +6,28 @@ client = discord.Client()
 player = None
 paused = False
 voice = None
+token = None
 queue = []
+musicChan= None
 
+f = open('config','r')
+token = f.readline()
+token=  token[token.index(' ')+1:len(token)-1]
+print(token)
+musicChan = f.readline()
+musicChan = musicChan[musicChan.index(': ')+2:len(musicChan)-1]
+print(musicChan)
 @client.event
 async def on_ready():
+    
+    global musicChan
     print('Logged in as')
     print(client.user.name)
     print(client.user.id)
     print('------')
-    print(client.get_channel('207949179014610944'))
+    print(client.get_channel(musicChan))
     global voice
-    voice = await client.join_voice_channel(client.get_channel('207949179014610944'))
+    voice = await client.join_voice_channel(client.get_channel(musicChan))
     gamez = discord.Game()
     gamez.name = 'the internet'
     gamez.type = 1
@@ -129,4 +140,4 @@ async def Play():
             await asyncio.sleep(1)
         del queue[0]
         await Play()
-client.run('MjA3NjQ1MjA2OTE5NTEyMDY0.CqyMdQ.K6KjIS5t3DB4fGt1UhGl-26BXuI')
+client.run(token)
