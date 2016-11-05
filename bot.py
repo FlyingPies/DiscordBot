@@ -12,6 +12,7 @@ voice = None
 token = None
 queue = []
 musicChan= None
+author = None
 repeat = False
 asdf = False
 processing = False
@@ -94,8 +95,6 @@ async def on_message(message):
                     break
             global queue
             queue.append(data)
-            print(title)
-            print(result)
             global player
             if (len(queue)==1 and player == None) or (len(queue)==1 and player.is_done()):
                 await client.send_message(message.channel, 'I will now play **' + title+'**')
