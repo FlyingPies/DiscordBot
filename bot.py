@@ -13,9 +13,11 @@ token = None
 queue = []
 musicChan= None
 author = None
+djmode = False
 repeat = False
 asdf = False
 processing = False
+prevmessage = None
 
 f = open('config','r')
 token = f.readline()
@@ -29,7 +31,7 @@ key = key[key.index('=')+1:len(key)]
 print(key)
 @client.event
 async def on_ready():
-    
+
     global musicChan
     print('Logged in as')
     print(client.user.name)
@@ -47,8 +49,24 @@ async def on_ready():
 
 @client.event
 async def on_message(message):
+    global prevmessage
+    if (not prevmessage == None) and prevmessage.author.id==message.author.id:
+        print('f')
+        await client.clear_reactions(prevmessage)
+    if message.author.id=='145615220189036544':
+        await client.add_reaction(message,'\N{PILE OF POO}')
+    if message.author.id=='148496704440762368':
+        await client.add_reaction(message,u'\U0001F40D')
+        await client.add_reaction(message,u'\U0001F32E')
+        await client.add_reaction(message,u'\U0001F365')
+    if message.author.id=='223287310408613900':
+        await client.add_reaction(message,u'\U0001F37C')
+    if message.author.id=='183382090837000192':
+        await client.add_reaction(message,u'\U0001F37C')
+    if message.author.id=='234031196743532555':
+        await client.add_reaction(message,u'\U0001F595\U0001F3FF')
     if message.content.lower().startswith('!help'):
-        await client.send_message(message.channel,'Here are a list of commands:\n**!help** - Returns the list of working commands\n**!clear_chat** - Clears the chat __**(Only Admins are allowed to do this)**__\n**!google** `[query]` - Returns first Google search result of search query\n**!play** `[query]` - Plays first Youtube result in the Music Channel\n**!repeat** `[query]` Plays first Youtube result in the Music Channel on repeat. This will skip all songs in the queue before it. The loop can be ended with the **!skip** command\n**!skip** - Skips song that is currently being played\n**!pause** - Paused song that is currently being played\n**!resume** - Resumes currently paused song\n**!np** - Returns the name of song that is now playing')
+        await client.send_message(message.channel,'Here are a list of commands:\n**!help** - Returns the list of working commands\n**!clear_chat** - Clears the chat __**(Only Admins are allowed to do this)**__\n**!google** `[query]` - Returns first Google search result of search query\n**!play** `[query]` - Plays first Youtube result in the Music Channel\n**!repeat** `[query]` Plays first Youtube result in the Music Channel on repeat. This will skip all songs in the queue before it. The loop can be ended with the **!skip** command\n**!skip** - Skips song that is currently being played\n**!pause** - Paused song that is currently being played\n**!resume** - Resumes currently paused song\n**!np** - Returns the name of song that is now playing\n**!queue** - Shows current queue. Say `!queue -h` for my queue commands\n**!cq** - Clears the queue.')
     if message.content.lower().startswith('!test'):
         counter = 0
         tmp = await client.send_message(message.channel, 'Calculating messages...')
@@ -72,96 +90,84 @@ async def on_message(message):
         global key
         query = message.content[message.content.index(' ')+1:len(message.content)]
         service = build('customsearch', 'v1', developerKey=key)
-        res = service.cse().list(q=query,cx='013388782467450060570:cc_bo6ma8uk').execute() 
+        res = service.cse().list(q=query,cx='013388782467450060570:cc_bo6ma8uk').execute()
 
         if 'items' in res.keys():
             result= res['items'][0]['link']
-            print(result) 
+            print(result)
             await client.send_message(message.channel, result)
         else:
             await client.send_message(message.channel, 'No link was found.')
 
     elif message.content.lower().startswith('!play'):
-        query = message.content[message.content.index(' ')+1:len(message.content)]
-        youtube = build('youtube', 'v3',developerKey=key)
-        search_response = youtube.search().list(q=query,part="id,snippet",maxResults=50).execute()
-        items=search_response.get('items',[])
-        if items:
-            for x in range(0,len(items)):
-                if items[x]['id']['kind']=='youtube#video' :
-                    result = 'https://www.youtube.com/watch?v='+items[x]['id']['videoId']
-                    title = items[x]['snippet']['title']
-                    data = items[x]
-                    break
-            global queue
-            queue.append(data)
-            global player
-            if (len(queue)==1 and player == None) or (len(queue)==1 and player.is_done()):
-                await client.send_message(message.channel, 'I will now play **' + title+'**')
+        global djmode
+        isdj = False
+        for x in range(0,len(message.author.roles)):
+            if message.author.roles[x].name=='DJ':
+                isdj=True
+        if(djmode==True and isdj) or djmode==False:
+            query = message.content[message.content.index(' ')+1:len(message.content)]
+            youtube = build('youtube', 'v3',developerKey=key)
+            search_response = youtube.search().list(q=query,part="id,snippet",maxResults=50).execute()
+            items=search_response.get('items',[])
+            if items:
+                for x in range(0,len(items)):
+                    if items[x]['id']['kind']=='youtube#video' :
+                        result = 'https://www.youtube.com/watch?v='+items[x]['id']['videoId']
+                        title = items[x]['snippet']['title']
+                        data = items[x]
+                        break
+                global queue
+                queue.append(data)
+                global player
+                if (len(queue)==1 and player == None) or (len(queue)==1 and player.is_done()):
+                    await client.send_message(message.channel, 'I will now play **' + title+'**')
+                else:
+                    await client.send_message(message.channel, 'A song is already playing, so **'+title+'** will be added to the queue')
+                if not player ==None:
+                    print("is_done :: "+str(not player.is_playing()))
+                print("queue length :: "+str(len(queue)))
+                await Play()
             else:
-                await client.send_message(message.channel, 'A song is already playing, so **'+title+'** will be added to the queue')
-            if not player ==None:
-                print("is_done :: "+str(not player.is_playing()))
-            print("queue length :: "+str(len(queue)))
-            await Play()
+                await client.send_message(message.channel, 'No link was found.')
         else:
-            await client.send_message(message.channel, 'No link was found.')
+            await client.send_message(message.channel, 'NOT AUTHORIZED')
     elif message.content.lower().startswith('!repeat'):
-        query = message.content[message.content.index(' ')+1:len(message.content)]
-        youtube = build('youtube', 'v3',developerKey=key)
-        search_response = youtube.search().list(q=query,part="id,snippet",maxResults=50).execute()
-        items=search_response.get('items',[])
-        if items:
-            for x in range(0,len(items)):
-                if items[x]['id']['kind']=='youtube#video' :
-                    result = 'https://www.youtube.com/watch?v='+items[x]['id']['videoId']
-                    title = items[x]['snippet']['title']
-                    data = items[x]
-                    break
-            global asdf
-            if len(queue)>0:
-                asdf = True
-                skipped = True
-            queue=[]
-            queue.append(data)
+        global djmode
+        isdj = False
+        for x in range(0,len(message.author.roles)):
+            if message.author.roles[x].name=='DJ':
+                isdj=True
+        if(djmode==True and isdj) or djmode==False:
             global repeat
             repeat = True
-            if (len(queue)==1 and player == None) or (len(queue)==1 and player.is_done()):
-                await client.send_message(message.channel, 'I will now play **' + title+'**'+' on repeat')
-            else:
-                await client.send_message(message.channel, 'Skipping all songs to put **'+title+'** on repeat')
-            if not player ==None:
-                print("is_done :: "+str(not player.is_playing()))
-            print("queue length :: "+str(len(queue)))
+            await client.send_message(message.channel,'The song is now on repeat')
+        else:
+            await client.send_message(message.channel, 'NOT AUTHORIZED')
+    elif message.content.lower().startswith('!skip'):
+        global djmode
+        isdj = False
+        for x in range(0,len(message.author.roles)):
+            if message.author.roles[x].name=='DJ':
+                isdj=True
+        if(djmode==True and isdj) or djmode==False:
             if player==None:
-                await Play()
-            elif not player.is_playing():
-                await Play()
+                await client.send_message(message.channel,'No song is currently playing.')
             elif player.is_playing():
                 player.stop()
-                print('f')
+                global paused
+                global processing
+                processing = False
+                paused = False
+                skipped = True
+                if repeat:
+                    repeat = False
+                print(str(len(queue)))
+                print(player.is_playing())
             else:
-                await Play()
+                await client.send_message(message.channel,'No song is currently playing.')
         else:
-            await client.send_message(message.channel, 'No link was found.')
-    elif message.content.lower().startswith('!skip'):
-        if player==None:
-            await client.send_message(message.channel,'No song is currently playing.')
-        elif player.is_playing():
-            player.stop()
-            global paused
-            global processing
-            processing = False
-            paused = False
-            skipped = True
-            if repeat:
-                repeat = False
-                del queue[0]
-            await Play()
-            print(str(len(queue)))
-            print(player.is_playing())
-        else:
-            await client.send_message(message.channel,'No song is currently playing.')
+            await client.send_message(message.channel,'NOT AUTHORIZED')
     elif message.content.lower().startswith('!pause'):
         if player==None:
             await client.send_message(message.channel,'No song is currently playing.')
@@ -182,19 +188,78 @@ async def on_message(message):
         if player == None:
             await client.send_message(message.channel, 'No song is currently playing.')
         elif player.is_playing():
-            await client.send_message(message.channel, '**'+player.title+'** is currently playing')
+            await client.send_message(message.channel, '**'+player.title+'** is currently playing '+str(player.duration))
         else:
-            await client.send_message(message.channel, '**'+player.title+'** is currently playing')
-    elif message.content.lower().startswith('!queue'):
+            await client.send_message(message.channel, '**'+player.title+'** is currently playing '+str(player.duration))
+    elif message.content.lower().startswith('!queue') and len(message.content.lower())==6:
         output='Queue list:\n'
         if len(queue)==0:
             await client.send_message(message.channel, 'The queue is empty')
         else:
             if player.is_playing():
                 output='*Now Playing* - **'+player.title+'**\nQueue list:\n'
-            for x in range(0,len(queue)):
-                output += str(x+1)+'. **'+queue[x]['snippet']['title']+'**\n'
+            for x in range(1,len(queue)):
+                output += str(x)+'. **'+queue[x]['snippet']['title']+'**\n'
             await client.send_message(message.channel, output)
+    elif message.content.lower().startswith('!queue -r '):
+        global djmode
+        global queue
+        isdj = False
+        for x in range(0,len(message.author.roles)):
+            if message.author.roles[x].name=='DJ':
+                isdj=True
+        if(djmode==True and isdj) or djmode==False:
+            f=message.content[message.content.index('-')+3:]
+            if not ',' in f:
+                slot = int(f)
+                if not (slot>len(queue) or slot<1):
+                    del queue[slot-1]
+                else:
+                    await client.send_message(message.channel,'This is not a valid place in the queue')
+            else:
+                f=f.split(',')
+                print(f)
+                for x in range(0,len(f)-1):
+                    if int(f[x])>int(f[x+1]):
+                        s = f[x]
+                        f[x]=f[x+1]
+                        f[x+1]=s
+                print(f)
+                for x in range(len(f)-1,-1,-1):
+                    if not (int(f[x])>len(queue) or int(f[x])<1):
+                        del queue[int(f[x])]
+                    else:
+                        await client.send_message(message.channel,'One of the entries you put in are not valid')
+        else:
+            await client.send_message(message.channel,'NOT AUTHORIZED')
+    elif message.content.lower().startswith('!djmode'):
+        global djmode
+        isdj = False
+        for x in range(0,len(message.author.roles)):
+            if message.author.roles[x].name=='DJ':
+                isdj=True
+        if isdj:
+            if not djmode:
+                djmode = True
+                await client.send_message(message.channel, 'DJ Mode is now on. Only designated DJ are allowed to queue and skip')
+            elif djmode:
+                djmode = False
+                await client.send_message(message.channel, 'DJ Mode is now off. Now anyone can queue and skip songs.')
+        else:
+            await client.send_message(message.channel,'NOT AUTHORIZED')
+    elif message.content.lower().startswith('!cq'):
+        global djmode
+        isdj = False
+        for x in range(0,len(message.author.roles)):
+            if message.author.roles[x].name=='DJ':
+                isdj=True
+        if(djmode==True and isdj) or djmode==False:
+            queue=[]
+            await client.send_message(message.channel, 'Queue has been cleared')
+        else:
+            await client.send_message(message.channel, 'NOT AUTHORIZED')
+            
+    prevmessage = message
 async def Play():
     global player
     global queue
@@ -208,9 +273,8 @@ async def Play():
         player = await voice.create_ytdl_player('https://www.youtube.com/watch?v='+queue[0]['id']['videoId'])
         asdf = False
         paused = False
-        if not repeat:
-            del queue[0]
         skipped = False
+        player.volume = 0.5
         player.start()
         print(str(skipped))
         while True:
@@ -218,8 +282,12 @@ async def Play():
                 break
             processing = False
             await asyncio.sleep(1)
-        if not skipped:
-            await Play()
+        if not repeat:
+            del queue[0]
+        await Play()
     else:
         print("something already playing")
 client.run(token)
+
+def hasRole():
+    print('a')
