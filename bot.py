@@ -55,8 +55,11 @@ async def on_message(message):
         await client.clear_reactions(prevmessage)
     if message.author.id=='145615220189036544':
         await client.add_reaction(message,'\N{PILE OF POO}')
+<<<<<<< HEAD
     if message.author.id=='183377500309684225':
         await client.add_reaction(message,'arjun:230098037660188672')
+=======
+>>>>>>> f34dc812ceaf19cd4b319188d4e9fb79a8ab0a86
     if message.author.id=='148496704440762368':
         await client.add_reaction(message,u'\U0001F40D')
         await client.add_reaction(message,u'\U0001F32E')
@@ -67,8 +70,11 @@ async def on_message(message):
         await client.add_reaction(message,u'\U0001F37C')
     if message.author.id=='234031196743532555':
         await client.add_reaction(message,u'\U0001F595\U0001F3FF')
+<<<<<<< HEAD
     if message.author.id=='139945569463304192':
         await client.add_reaction(message,u'\U0001f371')
+=======
+>>>>>>> f34dc812ceaf19cd4b319188d4e9fb79a8ab0a86
     if message.content.lower().startswith('!help'):
         await client.send_message(message.channel,'Here are a list of commands:\n**!help** - Returns the list of working commands\n**!clear_chat** - Clears the chat __**(Only Admins are allowed to do this)**__\n**!google** `[query]` - Returns first Google search result of search query\n**!play** `[query]` - Plays first Youtube result in the Music Channel\n**!repeat** `[query]` Plays first Youtube result in the Music Channel on repeat. This will skip all songs in the queue before it. The loop can be ended with the **!skip** command\n**!skip** - Skips song that is currently being played\n**!pause** - Paused song that is currently being played\n**!resume** - Resumes currently paused song\n**!np** - Returns the name of song that is now playing\n**!queue** - Shows current queue. Say `!queue -h` for my queue commands\n**!cq** - Clears the queue.')
     if message.content.lower().startswith('!test'):
@@ -223,6 +229,7 @@ async def on_message(message):
             else:
                 f=f.split(',')
                 print(f)
+<<<<<<< HEAD
                 for x in range(1,len(f)):
                     hole=x
                     while(hole>0 and f[hole]<f[hole-1]):
@@ -230,6 +237,13 @@ async def on_message(message):
                         f[hole]=f[hole-1]
                         f[hole-1]=val
                         hole-=1
+=======
+                for x in range(0,len(f)-1):
+                    if int(f[x])>int(f[x+1]):
+                        s = f[x]
+                        f[x]=f[x+1]
+                        f[x+1]=s
+>>>>>>> f34dc812ceaf19cd4b319188d4e9fb79a8ab0a86
                 print(f)
                 for x in range(len(f)-1,-1,-1):
                     if not (int(f[x])>len(queue) or int(f[x])<1):
@@ -264,8 +278,13 @@ async def on_message(message):
             await client.send_message(message.channel, 'Queue has been cleared')
         else:
             await client.send_message(message.channel, 'NOT AUTHORIZED')
+<<<<<<< HEAD
     if message.server.id=='183378379133681664':
         prevmessage = message
+=======
+            
+    prevmessage = message
+>>>>>>> f34dc812ceaf19cd4b319188d4e9fb79a8ab0a86
 async def Play():
     global player
     global queue
