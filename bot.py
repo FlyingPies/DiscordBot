@@ -4,7 +4,8 @@ import pprint
 from googleapiclient.discovery import build
 from apiclient.errors import HttpError
 from oauth2client.tools import argparser
-import requests
+import urllib
+import urllib.request
 from bs4 import BeautifulSoup
 client = discord.Client()
 player = None
@@ -110,8 +111,9 @@ async def on_message(message):
         if(djmode==True and hasRole(message.author,'DJ')) or djmode==False:
             query = message.content[message.content.index(' ')+1:len(message.content)]
             link = "https://www.youtube.com/results?search_query="+query
-            r = requests.get(link)
-            soup = BeautifulSoup(r.content, "html.parser")
+            link = link.replace(' ','+')
+            r = urllib.request.urlopen(link)
+            soup = BeautifulSoup(r, "lxml")
             count=0
             for link in soup.find_all('a'):
                 if 'watch' in link.get("href") and not 'list' in link.get("href") and not 'googleads' in link.get("href"):
