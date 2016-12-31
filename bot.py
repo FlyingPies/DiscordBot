@@ -110,22 +110,22 @@ async def on_message(message):
         global djmode
         if(djmode==True and hasRole(message.author,'DJ')) or djmode==False:
             query = message.content[message.content.index(' ')+1:len(message.content)]
+            query=query.replace(' ','+')
             link = "https://www.youtube.com/results?search_query="+query
-            link = link.replace(' ','+')
+            print(link)
             r = urllib.request.urlopen(link)
             soup = BeautifulSoup(r, "lxml")
-            count=0
-            for link in soup.find_all('a'):
-                if 'watch' in link.get("href") and not 'list' in link.get("href") and not 'googleads' in link.get("href"):
-                    if count>0:
-                        title=link.text
+            try:
+                data=soup.find_all('a',{'class':'yt-uix-tile-link'})
+                for g in data:
+                    if not 'googleads' in g.get("href") and 'watch' in g.get('href'):
+                        link='https://www.youtube.com'+g.get("href")
+                        title=g.text
+                        data = {'link':link,'title':title}
                         break
-                    count+=1
-            if count>0:
                 global queue
-                link='https://www.youtube.com'+link.get('href')
-                data={'link':link,'title':title}
                 queue.append(data)
+                print(queue[0]['title']+" - "+queue[0]['link'])
                 global player
                 if (len(queue)==1 and player == None) or (len(queue)==1 and player.is_done()):
                     await client.send_message(message.channel, 'I will now play **' + title+'**')
@@ -135,7 +135,7 @@ async def on_message(message):
                     print("is_done :: "+str(not player.is_playing()))
                 print("queue length :: "+str(len(queue)))
                 await Play()
-            else:
+            except:
                 await client.send_message(message.channel, 'No link was found.')
         else:
             await client.send_message(message.channel, 'NOT AUTHORIZED')
