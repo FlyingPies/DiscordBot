@@ -1,11 +1,9 @@
 import discord
 import asyncio
-import pprint
+import aiohttp
 from googleapiclient.discovery import build
 from apiclient.errors import HttpError
 from oauth2client.tools import argparser
-import urllib
-import urllib.request
 from bs4 import BeautifulSoup
 client = discord.Client()
 player = None
@@ -113,30 +111,30 @@ async def on_message(message):
             query=query.replace(' ','+')
             link = "https://www.youtube.com/results?search_query="+query
             print(link)
-            r = urllib.request.urlopen(link)
-            soup = BeautifulSoup(r, "lxml")
-            try:
-                data=soup.find_all('a',{'class':'yt-uix-tile-link'})
-                for g in data:
-                    if not 'googleads' in g.get("href") and 'watch' in g.get('href'):
-                        link='https://www.youtube.com'+g.get("href")
-                        title=g.text
-                        data = {'link':link,'title':title}
-                        break
-                global queue
-                queue.append(data)
-                print(queue[0]['title']+" - "+queue[0]['link'])
-                global player
-                if (len(queue)==1 and player == None) or (len(queue)==1 and player.is_done()):
-                    await client.send_message(message.channel, 'I will now play **' + title+'**')
-                else:
-                    await client.send_message(message.channel, 'A song is already playing, so **'+title+'** will be added to the queue')
-                if not player ==None:
-                    print("is_done :: "+str(not player.is_playing()))
-                print("queue length :: "+str(len(queue)))
-                await Play()
-            except:
-                await client.send_message(message.channel, 'No link was found.')
+            async with  aiohttp.get(link) as r:
+                 soup = BeautifulSoup(await r.text(), "lxml")
+                 try:
+                     data=soup.find_all('a',{'class':'yt-uix-tile-link'})
+                     for g in data:
+                         if not 'googleads' in g.get("href") and 'watch' in g.get('href'):
+                            link='https://www.youtube.com'+g.get("href")
+                            title=g.text
+                            data = {'link':link,'title':title}
+                            break
+                     global queue
+                     queue.append(data)
+                     print(queue[0]['title']+" - "+queue[0]['link'])
+                     global player
+                     if (len(queue)==1 and player == None) or (len(queue)==1 and player.is_done()):
+                         await client.send_message(message.channel, 'I will now play **' + title+'**')
+                     else:
+                         await client.send_message(message.channel, 'A song is already playing, so **'+title+'** will be added to the queue')
+                     if not player ==None:
+                          print("is_done :: "+str(not player.is_playing()))
+                     print("queue length :: "+str(len(queue)))
+                     await Play()
+                 except:
+                     await client.send_message(message.channel, 'No link was found.')
         else:
             await client.send_message(message.channel, 'NOT AUTHORIZED')
     elif message.content.lower().startswith('!repeat'):
