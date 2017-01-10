@@ -268,6 +268,8 @@ async def on_message(message):
         await bot.add_reaction(message,u'\U0001F595\U0001F3FF')
     if message.author.id=='139945569463304192':
         await bot.add_reaction(message,u'\U0001f371')
+    if message.author.id=='165977802867343361':
+        await bot.add_reaction(message,u'\U0001F1F0\U0001F1F7')
     if message.server.id=='183378379133681664':
         prevmessage = message
     await bot.process_commands(message)
