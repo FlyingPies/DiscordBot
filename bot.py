@@ -1,6 +1,7 @@
 import discord
 import asyncio
 import aiohttp
+import soundcloud
 from discord.ext import commands
 from googleapiclient.discovery import build
 from apiclient.errors import HttpError
@@ -30,6 +31,7 @@ print(musicChan)
 key = f.readline()
 key = key[key.index('=')+1:len(key)]
 print(key)
+sc = soundcloud.Client(client_id='2uFpHTPfMiHei6CGgPlTMXoeTUtBp9Iy')
 description = 'Bot made by Arjun Lalith'
 bot = commands.Bot(command_prefix='!',description=description)
 @bot.event
@@ -85,41 +87,70 @@ async def google(*,query : str,):
         await bot.say(result)
     else:
         await bot.say('No link was found.')
-@bot.command(pass_context=True)
+@bot.group(pass_context=True,invoke_without_command=True)
 async def play(ctx,*, query : str):
     '''Plays requested song in the Music Channel'''
     global djmodez
-    if (djmodez==True and hasRole(ctx.message.author,'DJ')) or djmodez==False:
+    if ctx.invoked_subcommand is None:
+        if (djmodez==True and hasRole(ctx.message.author,'DJ')) or djmodez==False:
+            query=query.replace(' ','+')
+            link = "https://www.youtube.com/results?search_query="+query
+            print(link)
+            async with  aiohttp.get(link) as r:
+                 soup = BeautifulSoup(await r.text(), "lxml")
+                 try:
+                     datas=soup.find_all('a',{'class':'yt-uix-tile-link'})
+                     for g in datas:
+                         if not 'googleads' in g.get("href"):
+                            link='https://www.youtube.com'+g.get("href")
+                            title=g.text
+                            data = {'link':link,'title':title}
+                            break
+                     global queues
+                     queues.append(data)
+                     print(queues[0]['title']+" - "+queues[0]['link'])
+                     global player
+                     if (len(queues)==1 and player == None) or (len(queues)==1 and player.is_done()):
+                         await bot.say('I will now play **' + title+'**')
+                     else:
+                         await bot.say('A song is already playing, so **'+title+'** will be added to the queue')
+                     if not player ==None:
+                          print("is_done :: "+str(not player.is_playing()))
+                     print("queue length :: "+str(len(queues)))
+                     await Play()
+                 except:
+                     await bot.say('No link was found.')
+        else:
+            print(str(djmodez))
+            await bot.say('NOT AUTHORIZED')
+@play.command(pass_context=True,name='-s')
+async def soundcloud(ctx,*,query : str):
+    '''Plays Music from Soundcloud'''
+    if (djmodez==True and hasRole(ctx.message.author, 'DJ')) or djmodez==False:
         query=query.replace(' ','+')
-        link = "https://www.youtube.com/results?search_query="+query
-        print(link)
+        link = 'https://soundcloud.com/search/sounds?q='+query
         async with  aiohttp.get(link) as r:
-             soup = BeautifulSoup(await r.text(), "lxml")
-             try:
-                 datas=soup.find_all('a',{'class':'yt-uix-tile-link'})
-                 for g in datas:
-                     if not 'googleads' in g.get("href"):
-                        link='https://www.youtube.com'+g.get("href")
-                        title=g.text
-                        data = {'link':link,'title':title}
-                        break
-                 global queues
-                 queues.append(data)
-                 print(queues[0]['title']+" - "+queues[0]['link'])
-                 global player
-                 if (len(queues)==1 and player == None) or (len(queues)==1 and player.is_done()):
-                     await bot.say('I will now play **' + title+'**')
-                 else:
-                     await bot.say('A song is already playing, so **'+title+'** will be added to the queue')
-                 if not player ==None:
-                      print("is_done :: "+str(not player.is_playing()))
-                 print("queue length :: "+str(len(queues)))
-                 await Play()
-             except:
-                 await bot.say('No link was found.')
-    else:
-        print(str(djmodez))
-        await bot.say('NOT AUTHORIZED')
+            try:
+                soup = BeautifulSoup(await r.text(), "lxml")
+                datas=soup.find_all('ul')
+                song=datas[1].find('a')
+                lonk="https://soundcloud.com"+song.get('href')
+                title=song.text
+                data = {'link':lonk,'title':title}
+                global queues
+                queues.append(data)
+                print(queues[0]['title']+" - "+queues[0]['link'])
+                global player
+                if (len(queues)==1 and player == None) or (len(queues)==1 and player.is_done()):
+                    await bot.say('I will now play **' + title+'**')
+                else:
+                    await bot.say('A song is already playing, so **'+title+'** will be added to the queue')
+                if not player ==None:
+                     print("is_done :: "+str(not player.is_playing()))
+                print("queue length :: "+str(len(queues)))
+                await Play()
+            except:
+                await bot.say('No link was found.')
 @bot.command(pass_context=True)
 async def repeat(ctx):
     '''Puts the currently played song on repeat'''
@@ -296,6 +327,7 @@ async def Play():
             processing = False
             await asyncio.sleep(1)
         if not repeat:
+            print('sd')
             del queues[0]
         await Play()
     else:
