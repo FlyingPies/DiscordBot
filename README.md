@@ -12,8 +12,8 @@ To install you here is what you need installed:
     
    Installed through pip:  
     `youtube_dl`  
-    `lxml`
-    `beautifulsoup4`
+    `lxml`  
+    `beautifulsoup4`    
     `discord.py[voice]`  
     `google-api-python-client`  
 
