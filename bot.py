@@ -34,6 +34,42 @@ print(key)
 sc = soundcloud.Client(client_id='2uFpHTPfMiHei6CGgPlTMXoeTUtBp9Iy')
 description = 'Bot made by Arjun Lalith'
 bot = commands.Bot(command_prefix='!',description=description)
+with open("flairs","r") as f:
+    file = f.read().splitlines()
+flairs=[]
+for line in file:
+    count = 0
+    lastcomma=0
+    g=''
+    h=''
+    emojis=[]
+    for x in range (0,len(line)):
+        if count==0 and line[x:x+1]==',':
+            id=line[:x]
+            count+=1
+            lastcomma=x
+        elif line[x:x+1]==',' and not ':' in line[lastcomma+1:x]:
+            #f=chr(int(line[lastcomma+3:x],16))
+            f=line[lastcomma+1:x]
+            f=f.replace('\\U','')
+            lastcomma=x
+            for x in range (0,int(len(f)/8)):
+                g+=chr(int(f[x*8:(x+1)*8],16))
+            emojis.append(g)
+        elif line[x:x+1]==',':
+            emojis.append(line[lastcomma+1:x])
+            lastcomma=x
+        if x==len(line)-1 and not ':' in line[lastcomma+1:]:
+            #f=chr(int(line[lastcomma+3:x],16))
+            f=line[lastcomma+1:]
+            f=f.replace('\\U','')
+            for x in range (0,int(len(f)/8)):
+                h+=chr(int(f[x*8:(x+1)*8],16))
+            emojis.append(h)
+        elif x==len(line)-1:
+            emojis.append(line[lastcomma+1:])
+    print(emojis)
+    flairs.append({'id':id,'emojis':emojis})     
 @bot.event
 async def on_ready():
 
@@ -283,26 +319,14 @@ async def on_message(message):
     if (not prevmessage == None) and prevmessage.author.id==message.author.id:
         print('f')
         await bot.clear_reactions(prevmessage)
-    if message.author.id=='145615220189036544':
-        await bot.add_reaction(message,'\N{PILE OF POO}')
-    if message.author.id=='183377500309684225':
-        await bot.add_reaction(message,'arjun:230098037660188672')
-    if message.author.id=='148496704440762368':
-        await bot.add_reaction(message,u'\U0001F40D')
-        await bot.add_reaction(message,u'\U0001F32E')
-        await bot.add_reaction(message,u'\U0001F365')
-    if message.author.id=='223287310408613900':
-        await bot.add_reaction(message,u'\U0001F37C')
-    if message.author.id=='183382090837000192':
-        await bot.add_reaction(message,u'\U0001F37C')
-    if message.author.id=='234031196743532555':
-        await bot.add_reaction(message,u'\U0001F595\U0001F3FF')
-    if message.author.id=='139945569463304192':
-        await bot.add_reaction(message,u'\U0001f371')
-    if message.author.id=='165977802867343361':
-        await bot.add_reaction(message,u'\U0001F1F0\U0001F1F7')
+    for people in flairs:
+        if message.author.id==people['id']:
+            for reaction in people['emojis']:
+                await bot.add_reaction(message,reaction)
+            break
     if message.server.id=='183378379133681664':
         prevmessage = message
+
     await bot.process_commands(message)
 async def Play():
     global player
