@@ -36,40 +36,42 @@ description = 'Bot made by Arjun Lalith'
 bot = commands.Bot(command_prefix='!',description=description)
 with open("flairs","r") as f:
     file = f.read().splitlines()
+f.close()
 flairs=[]
 for line in file:
     count = 0
     lastcomma=0
-    g=''
-    h=''
     emojis=[]
     for x in range (0,len(line)):
         if count==0 and line[x:x+1]==',':
             id=line[:x]
             count+=1
             lastcomma=x
-        elif line[x:x+1]==',' and not ':' in line[lastcomma+1:x]:
-            #f=chr(int(line[lastcomma+3:x],16))
-            f=line[lastcomma+1:x]
-            f=f.replace('\\U','')
-            lastcomma=x
-            for x in range (0,int(len(f)/8)):
-                g+=chr(int(f[x*8:(x+1)*8],16))
-            emojis.append(g)
         elif line[x:x+1]==',':
-            emojis.append(line[lastcomma+1:x])
-            lastcomma=x
+            if ':' in line[lastcomma+1:x]:
+                emojis.append(line[lastcomma+1:x])
+                lastcomma=x
+            else:
+                f=line[lastcomma+1:x]
+                f=f.replace('\\U','')
+                lastcomma=x
+                g=''
+                for y in range (0,int(len(f)/8)):
+                    g+=chr(int(f[y*8:(y+1)*8],16))
+                emojis.append(g)
         if x==len(line)-1 and not ':' in line[lastcomma+1:]:
-            #f=chr(int(line[lastcomma+3:x],16))
-            f=line[lastcomma+1:]
-            f=f.replace('\\U','')
-            for x in range (0,int(len(f)/8)):
-                h+=chr(int(f[x*8:(x+1)*8],16))
-            emojis.append(h)
-        elif x==len(line)-1:
-            emojis.append(line[lastcomma+1:])
-    print(emojis)
-    flairs.append({'id':id,'emojis':emojis})     
+            if ':' in line[lastcomma+1:]:
+                emojis.append(line[lastcomma+1:])
+                lastcomma=x
+            else:
+                f=line[lastcomma+1:]
+                f=f.replace('\\U','')
+                lastcomma=x
+                h=''
+                for z in range (0,int(len(f)/8)):
+                    h+=chr(int(f[z*8:(z+1)*8],16))
+                emojis.append(h)
+    flairs.append({'id':id,'emojis':emojis})   
 @bot.event
 async def on_ready():
 
