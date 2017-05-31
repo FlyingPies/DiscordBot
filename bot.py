@@ -13,6 +13,7 @@ skipped = False
 voice = None
 token = None
 queues = []
+flairs=[]
 musicChan= None
 author = None
 djmodez = False
@@ -21,6 +22,46 @@ asdf = False
 processing = False
 prevmessage = None
 
+def loadFlairs():
+    with open("flairs","r") as f:
+        file = f.read().splitlines()
+    f.close()
+    global flairs
+    flairs=[]
+    for line in file:
+        count = 0
+        lastcomma=0
+        emojis=[]
+        for x in range (0,len(line)):
+            if count==0 and line[x:x+1]==',':
+                id=line[:x]
+                count+=1
+                lastcomma=x
+            elif line[x:x+1]==',':
+                if ':' in line[lastcomma+1:x]:
+                    emojis.append(line[lastcomma+1:x])
+                    lastcomma=x
+                else:
+                    f=line[lastcomma+1:x]
+                    f=f.replace('\\U','')
+                    lastcomma=x
+                    g=''
+                    for y in range (0,int(len(f)/8)):
+                        g+=chr(int(f[y*8:(y+1)*8],16))
+                    emojis.append(g)
+            if x==len(line)-1:
+                if ':' in line[lastcomma+1:]:
+                    emojis.append(line[lastcomma+1:])
+                    lastcomma=x
+                else:
+                    f=line[lastcomma+1:]
+                    f=f.replace('\\U','')
+                    lastcomma=x
+                    h=''
+                    for z in range (0,int(len(f)/8)):
+                        h+=chr(int(f[z*8:(z+1)*8],16))
+                    emojis.append(h)
+        flairs.append({'id':id,'emojis':emojis})  
 f = open('config','r')
 token = f.readline()
 token=  token[token.index('=')+1:len(token)-1]
@@ -34,44 +75,7 @@ print(key)
 sc = soundcloud.Client(client_id='2uFpHTPfMiHei6CGgPlTMXoeTUtBp9Iy')
 description = 'Bot made by Arjun Lalith'
 bot = commands.Bot(command_prefix='!',description=description)
-with open("flairs","r") as f:
-    file = f.read().splitlines()
-f.close()
-flairs=[]
-for line in file:
-    count = 0
-    lastcomma=0
-    emojis=[]
-    for x in range (0,len(line)):
-        if count==0 and line[x:x+1]==',':
-            id=line[:x]
-            count+=1
-            lastcomma=x
-        elif line[x:x+1]==',':
-            if ':' in line[lastcomma+1:x]:
-                emojis.append(line[lastcomma+1:x])
-                lastcomma=x
-            else:
-                f=line[lastcomma+1:x]
-                f=f.replace('\\U','')
-                lastcomma=x
-                g=''
-                for y in range (0,int(len(f)/8)):
-                    g+=chr(int(f[y*8:(y+1)*8],16))
-                emojis.append(g)
-        if x==len(line)-1 and not ':' in line[lastcomma+1:]:
-            if ':' in line[lastcomma+1:]:
-                emojis.append(line[lastcomma+1:])
-                lastcomma=x
-            else:
-                f=line[lastcomma+1:]
-                f=f.replace('\\U','')
-                lastcomma=x
-                h=''
-                for z in range (0,int(len(f)/8)):
-                    h+=chr(int(f[z*8:(z+1)*8],16))
-                emojis.append(h)
-    flairs.append({'id':id,'emojis':emojis})   
+loadFlairs()
 @bot.event
 async def on_ready():
 
@@ -186,6 +190,8 @@ async def soundcloud(ctx,*,query : str):
                 if not player ==None:
                      print("is_done :: "+str(not player.is_playing()))
                 print("queue length :: "+str(len(queues)))
+                global repeat
+                repeat = False
                 await Play()
             except:
                 await bot.say('No link was found.')
@@ -315,8 +321,93 @@ async def cq(ctx):
         await bot.say('Queue has been cleared')
     else:
         await bot.say('NOT AUTHORIZED')
+@bot.group(pass_context=True)
+async def flair(ctx):
+    '''Allows user to view current flairs that they have'''
+    output='Here are the following flairs that you currently have set\n'
+    global flairs
+    if ctx.invoked_subcommand is None:
+        uid=True
+        for items in flairs:
+            if items['id']==ctx.message.author.id:
+                uid=False
+                for x in range (0,len(items['emojis'])):
+                    if ':' in items['emojis'][x]:
+                        output+= str(x+1)+'. <:'+items['emojis'][x]+'> \n'
+                    else:
+                        output+=str(x+1)+'. '+items['emojis'][x]+'\n'
+                await bot.say(output)
+                break
+        if uid:
+            await bot.say('You do not have any flairs')
+@flair.command(pass_context=True,name='add')
+async def flairadd(ctx,emoji : str):
+    '''Adds given flair to the user'''
+    uid=True
+    if '<:' in emoji or '\\U' in bytes(emoji,'unicode-escape').decode('utf-8'):
+        if "<" in emoji:
+            emoji=emoji.replace("<:",'')
+            emoji=emoji.replace(">",'')
+        for items in flairs:
+            if items['id']==ctx.message.author.id:
+                uid=False
+                duplicate=False
+                for emojis in items['emojis']:
+                    if emojis==emoji:
+                        duplicate=True
+                        print('emoji already present')
+                        await boy.say('The following emoji is already a flair')
+                        break
+                if duplicate==False:
+                    items['emojis'].append(emoji)
+                    await bot.say('The new flair has been added')
+                break
+        if uid:
+            id=ctx.message.author.id
+            emojis=[]
+            emojis.append(emoji)
+            flairs.append({'id':id,'emojis':emojis})
+            await bot.say('The new flair has been added')
+        saveFlairs()
+    else:
+        await bot.say('This is not a valid emoji')
+@flair.command(pass_context=True,name='remove')
+async def flairremove(ctx,emoji : str):
+    '''Removes given flair from the user'''
+    uid=True
+    if '<:' in emoji or '\\U' in bytes(emoji,'unicode-escape').decode('utf-8'):
+        if "<" in emoji:
+            emoji=emoji.replace("<:",'')
+            emoji=emoji.replace(">",'')
+        for items in flairs:
+            if items['id']==ctx.message.author.id:
+                uid=False
+                duplicate=False
+                for emojis in items['emojis']:
+                    if emojis==emoji:
+                        if len(items['emojis'])==1:
+                            duplicate=True
+                            flairs.remove(items)
+                            print('Removed id from list')
+                            await bot.say('The following emoji has been removed')
+                            break
+                        else:
+                            duplicate=True
+                            items['emojis'].remove(emoji)
+                            print('The emoji has been removed')
+                            await bot.say('The following emoji has been removed')
+                            break
+                if duplicate==False:
+                    await bot.say('The following emoji is not currently one of your flairs')
+                break
+        if uid:
+            await bot.say('You do not currently have any flairs on you')
+        saveFlairs()
+    else:
+        await bot.say('This is not a valid emoji')
 @bot.event
 async def on_message(message):
+    global flairs
     global prevmessage
     if (not prevmessage == None) and prevmessage.author.id==message.author.id:
         print('f')
@@ -346,16 +437,17 @@ async def Play():
         skipped = False
         player.volume = 0.5
         player.start()
-        print(str(skipped))
         while True:
             if player==None or not player.is_playing():
                 break
             processing = False
-            await asyncio.sleep(1)
+            await asyncio.sleep(0.5)
         if not repeat:
             print('sd')
             del queues[0]
-        await Play()
+            await Play()
+        else:
+            await Play()
     else:
         print("something already playing")
 def hasRole(user,name):
@@ -365,5 +457,23 @@ def hasRole(user,name):
                 break
             else:
                 result=False
-    return result
+    return result 
+def saveFlairs():
+    global flairs
+    file= open('flairs','w')
+    output=''
+    for pair in flairs:
+        output+=pair['id']+','
+        for x in range (0,len(pair['emojis'])):
+            if x==len(pair['emojis'])-1 and not ':' in pair['emojis'][x]:
+                output+=bytes(pair['emojis'][x],'unicode-escape').decode('utf-8')
+            elif x==len(pair['emojis'])-1 and ':' in pair['emojis'][x]:
+                output+=pair['emojis'][x]
+            elif not ':' in pair['emojis'][x]:
+                output+=bytes(pair['emojis'][x],'unicode-escape').decode('utf-8')+','
+            else:
+                output+=pair['emojis'][x]+','
+        output+='\n'
+    file.write(output)
+    file.close()
 bot.run(token)
