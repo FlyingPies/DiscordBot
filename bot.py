@@ -43,6 +43,7 @@ def loadFlairs():
                 else:
                     f=line[lastcomma+1:x]
                     f=f.replace('\\U','')
+                    f=f.replace('\\u','')
                     lastcomma=x
                     g=''
                     for y in range (0,int(len(f)/8)):
@@ -55,6 +56,7 @@ def loadFlairs():
                 else:
                     f=line[lastcomma+1:]
                     f=f.replace('\\U','')
+                    f=f.replace('\\u','')
                     lastcomma=x
                     h=''
                     for z in range (0,int(len(f)/8)):
@@ -340,8 +342,9 @@ async def flair(ctx):
 async def flairadd(ctx,emoji : str):
     '''Adds given flair to the user'''
     uid=True
+    print(bytes(emoji,'unicode-escape').decode('utf-8'))
     global flairs
-    if '<:' in emoji or '\\U' in bytes(emoji,'unicode-escape').decode('utf-8'):
+    if '<:' in emoji or '\\U' in bytes(emoji,'unicode-escape').decode('utf-8') or '\\u' in bytes(emoji,'unicode-escape').decode('utf-8'):
         if "<" in emoji:
             emoji=emoji.replace("<:",'')
             emoji=emoji.replace(">",'')
@@ -353,7 +356,7 @@ async def flairadd(ctx,emoji : str):
                     if emojis==emoji:
                         duplicate=True
                         print('emoji already present')
-                        await boy.say('The following emoji is already a flair')
+                        await bot.say('The following emoji is already a flair')
                         break
                 if duplicate==False:
                     items['emojis'].append(emoji)
@@ -373,7 +376,7 @@ async def flairremove(ctx,emoji : str):
     '''Removes given flair from the user'''
     uid=True
     global flairs
-    if '<:' in emoji or '\\U' in bytes(emoji,'unicode-escape').decode('utf-8'):
+    if '<:' in emoji or '\\U' in bytes(emoji,'unicode-escape').decode('utf-8') or '\\u' in bytes(emoji,'unicode-escape').decode('utf-8'):
         if "<" in emoji:
             emoji=emoji.replace("<:",'')
             emoji=emoji.replace(">",'')
@@ -437,7 +440,7 @@ async def Play():
         player.start()
         while player.is_playing():
             processing = False
-            await asyncio.sleep(0.5)
+            await asyncio.sleep(1)
         if not repeat:
             print('Moving onto next song...')
             del queues[0]
@@ -462,11 +465,29 @@ def saveFlairs():
         output+=pair['id']+','
         for x in range (0,len(pair['emojis'])):
             if x==len(pair['emojis'])-1 and not ':' in pair['emojis'][x]:
-                output+=bytes(pair['emojis'][x],'unicode-escape').decode('utf-8')
+                if '\\u' in bytes(pair['emojis'][x],'unicode-escape').decode('utf-8'):
+                    t=bytes(pair['emojis'][x],'unicode-escape').decode('utf-8')
+                    t=t.replace('\\u','')
+                    while len(str(t))<8:
+                        t=str(0)+t
+                    t='\\U'+t
+                    output+=t
+                else:
+                    t=bytes(pair['emojis'][x],'unicode-escape').decode('utf-8')
+                    output+=t
             elif x==len(pair['emojis'])-1 and ':' in pair['emojis'][x]:
                 output+=pair['emojis'][x]
             elif not ':' in pair['emojis'][x]:
-                output+=bytes(pair['emojis'][x],'unicode-escape').decode('utf-8')+','
+                if '\\u' in bytes(pair['emojis'][x],'unicode-escape').decode('utf-8'):
+                    u=bytes(pair['emojis'][x],'unicode-escape').decode('utf-8')
+                    u=u.replace('\\u','')
+                    while len(str(u))<8:
+                        u=str(0)+u
+                    u='\\U'+u
+                    output+=u+','
+                else:
+                    u=bytes(pair['emojis'][x],'unicode-escape').decode('utf-8')
+                    output+=u+','
             else:
                 output+=pair['emojis'][x]+','
         output+='\n'
