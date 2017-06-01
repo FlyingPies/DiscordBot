@@ -1,7 +1,6 @@
 import discord
 import asyncio
 import aiohttp
-import soundcloud
 from discord.ext import commands
 from googleapiclient.discovery import build
 from apiclient.errors import HttpError
@@ -65,14 +64,13 @@ def loadFlairs():
 f = open('config','r')
 token = f.readline()
 token=  token[token.index('=')+1:len(token)-1]
-print(token)
+print('Token - '+token)
 musicChan = f.readline()
 musicChan = musicChan[musicChan.index('=')+1:len(musicChan)-1]
-print(musicChan)
+print('Channel ID - '+musicChan)
 key = f.readline()
 key = key[key.index('=')+1:len(key)]
-print(key)
-sc = soundcloud.Client(client_id='2uFpHTPfMiHei6CGgPlTMXoeTUtBp9Iy')
+print('Google API Key  - '+key)
 description = 'Bot made by Arjun Lalith'
 bot = commands.Bot(command_prefix='!',description=description)
 loadFlairs()
@@ -190,13 +188,11 @@ async def soundcloud(ctx,*,query : str):
                 if not player ==None:
                      print("is_done :: "+str(not player.is_playing()))
                 print("queue length :: "+str(len(queues)))
-                global repeat
-                repeat = False
                 await Play()
             except:
                 await bot.say('No link was found.')
-@bot.command(pass_context=True)
-async def repeat(ctx):
+@bot.command(pass_context=True,name='repeat')
+async def _repeat(ctx):
     '''Puts the currently played song on repeat'''
     if(djmodez==True and hasRole(ctx.message.author,'DJ')) or djmodez==False:
         global repeat
@@ -344,6 +340,7 @@ async def flair(ctx):
 async def flairadd(ctx,emoji : str):
     '''Adds given flair to the user'''
     uid=True
+    global flairs
     if '<:' in emoji or '\\U' in bytes(emoji,'unicode-escape').decode('utf-8'):
         if "<" in emoji:
             emoji=emoji.replace("<:",'')
@@ -375,6 +372,7 @@ async def flairadd(ctx,emoji : str):
 async def flairremove(ctx,emoji : str):
     '''Removes given flair from the user'''
     uid=True
+    global flairs
     if '<:' in emoji or '\\U' in bytes(emoji,'unicode-escape').decode('utf-8'):
         if "<" in emoji:
             emoji=emoji.replace("<:",'')
@@ -417,10 +415,9 @@ async def on_message(message):
             for reaction in people['emojis']:
                 await bot.add_reaction(message,reaction)
             break
-    if message.server.id=='183378379133681664':
+    if not message.server.id=='110373943822540800':
         prevmessage = message
-
-    await bot.process_commands(message)
+        await bot.process_commands(message)
 async def Play():
     global player
     global queues
@@ -429,6 +426,7 @@ async def Play():
     global paused
     global asdf
     global processing
+    global repeat
     if (((len(queues)>0 and player==None) or (len(queues)>0 and not player.is_playing())) and paused == False) and processing == False:
         processing = True
         player = await voice.create_ytdl_player(queues[0]['link'])
@@ -437,19 +435,17 @@ async def Play():
         skipped = False
         player.volume = 0.5
         player.start()
-        while True:
-            if player==None or not player.is_playing():
-                break
+        while player.is_playing():
             processing = False
             await asyncio.sleep(0.5)
         if not repeat:
-            print('sd')
+            print('Moving onto next song...')
             del queues[0]
             await Play()
         else:
             await Play()
     else:
-        print("something already playing")
+        print("Player is busy")
 def hasRole(user,name):
     for x in range(0,len(user.roles)):
             if user.roles[x].name==name:
